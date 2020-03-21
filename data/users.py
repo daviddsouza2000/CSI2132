@@ -13,10 +13,10 @@ cities = cities[1:] #first element is nan
 provinces = ["NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC", "YT", "NT", "NU"]
 super_host_chance = 0.05
 min_id = 1000
-max_id = 9999
+max_id = 999999
 min_house_number = 1
-max_house_number = 500
-num_users = 100
+max_house_number = 5000
+num_users = 500
 used_ids = set()
 result_df = pd.DataFrame(columns = ["UserId", "FirstName", "LastName", "HouseNumber", "Street", "City", "Province", "IsSuperHost"])
 
