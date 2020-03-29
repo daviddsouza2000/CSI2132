@@ -22,11 +22,22 @@ Aliquam ac leo feugiat, congue dui sed, aliquam dui. Morbi a ante lacus. Vivamus
 Aliquam gravida sapien vitae sem accumsan, sed aliquet quam iaculis. Nunc ornare ante dignissim sapien molestie, vel elementum tellus egestas. Nam rutrum scelerisque nulla ut luctus. Nulla et urna quis massa suscipit venenatis id pretium elit. In molestie urna lorem, a placerat tortor vestibulum ut. Cras ut nisl sed odio vulputate dapibus ut ut lectus. Vestibulum varius, enim sed faucibus gravida, odio nunc dictum odio, non venenatis lectus libero ut urna. Nullam ornare sapien vel mi mollis, vitae gravida erat interdum. Cras non rutrum erat, et congue tortor. Quisque urna sem, dapibus id viverra sed, dapibus id erat. Morbi vel neque ullamcorper nisi ultrices ullamcorper. Donec eget ipsum tincidunt, venenatis elit fringilla, vulputate enim. Suspendisse gravida, magna ut consequat eleifend, magna quam mattis ipsum, consequat sollicitudin mi nisi vel ante. Integer lacus lorem, accumsan id odio accumsan, mollis porta ex.
 """
 
-result_df = pd.DataFrame(columns = ["ReviewId", "PropertyId", "UserId", "Description", "Rating", "Communications", "Cleanliness", "Value"]) 
+result_df = pd.DataFrame(
+    columns=[
+        "ReviewId",
+        "PropertyId",
+        "UserId",
+        "Description",
+        "Rating",
+        "Communications",
+        "Cleanliness",
+        "Value",
+    ]
+)
 
 for i in range(num_reviews):
     review_id = random.randint(min_id, max_id)
-    while(review_id in used_ids):
+    while review_id in used_ids:
         review_id = random.randint(min_id, max_id)
 
     used_ids.add(review_id)
@@ -40,7 +51,17 @@ for i in range(num_reviews):
     communications = random.randint(1, 5)
     cleanliness = random.randint(1, 5)
     value = random.randint(1, 5)
-    result_df = result_df.append({"ReviewId": review_id, "PropertyId": prop_id, "UserId": user_id, "Description": description, "Rating": rating, "Communications": communications, "Cleanliness": cleanliness, "Value": value},
-            ignore_index = True)
+    result_df = result_df.append(
+        {
+            "ReviewId": review_id,
+            "PropertyId": prop_id,
+            "UserId": user_id,
+            "Description": description,
+            "Rating": rating,
+            "Communications": communications,
+            "Cleanliness": cleanliness,
+            "Value": value,
+        },
+        ignore_index=True,
+    )
 result_df.to_csv("sample_prop_reviews.csv")
-
