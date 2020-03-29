@@ -24,6 +24,23 @@ property except
 	property natural join propertybooking
 );
 
+/* 6 */
+select propertyid, title, description, datebooked, startdatetime, enddatetime from
+property natural join propertybooking
+where EXTRACT(DAY FROM propertybooking.startdatetime) <= 10
+and EXTRACT(DAY FROM propertybooking.enddatetime) >= 10;
+
+/* 7 */
+select employeeid, firstname, lastname, branch.branchid, branch.name as branch_name, salary
+from branch left join employee on branch.branchid = employee.branchid
+where salary >= 15000.00
+order by managerid, employeeid;
+
+/* 9 */
+update phonenumber
+set phonenumber = '1239872000'
+where userid = 466111;
+
 /* 10 */
 create function FirstNameFirst(firstName varchar, lastName varchar)
 returns varchar as $fullName$
