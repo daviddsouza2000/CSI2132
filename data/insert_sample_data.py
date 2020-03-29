@@ -1,4 +1,43 @@
+import pandas as pd
+import numpy
 import psycopg2 as psy
+
+
+def insert_data(info, cur):
+    filename = info[0]
+    tablename = info[1]
+    df = pd.read_csv(filename)
+    df.drop(df.filter(regex="Unname"), axis=1, inplace=True)
+    SQL = "INSERT INTO " + tablename + " VALUES "
+
+    values_template = "("
+    num_cols = len(df.columns)
+    for _ in range(num_cols - 1):
+        values_template += "%s,"
+    values_template += "%s)"
+
+    for _, row in df.iterrows():
+        data = []
+        columns = []
+        cols_str = "("
+        for col in df:
+            if type(row[col]) is numpy.int64:
+                data.append(int(row[col]))
+            else:
+                data.append(row[col])
+
+            columns.append(col)
+            cols_str += col + ","
+
+        cols_str = cols_str[:-1] + ")"
+        # this is because employee doesnt exist yet so we can't provide a FK to the manager yet
+        if tablename == "airbnb.branch":
+            data[1] = None
+
+        args_str = cur.mogrify(values_template, data).decode("utf-8")
+
+        cur.execute("INSERT INTO " + tablename + cols_str + " VALUES " + args_str + ";")
+
 
 conn = psy.connect(
     dbname="apoch012",
@@ -16,17 +55,17 @@ cur = conn.cursor()
 >>> data = ('OReilly', )
 >>> cur.execute(SQL, data) # Note: no % operator
 """
-
-info = [
+# TODO: break up the inserts into a few chunks to allow for later inserts to succeed
+# namely, I have to do all of the property/experience inserts before the relations that rely on them
+info_list = [
     ("sample_users.csv", "airbnb.user"),
     ("sample_branches.csv", "airbnb.branch"),
     ("sample_employees.csv", "airbnb.employee"),
     ("sample_properties_clean.csv", "airbnb.property"),
-    ("sample_experiences.csv", "experience"),
+    ("sample_experiences.csv", "airbnb.experience"),
     ("sample_amenities.csv", "airbnb.amenity"),
     ("sample_languages.csv", "airbnb.language"),
-    ("sample_inclusions.csv", "airbnb.inclusions"),
-    ("sample_property_amenities.csv", "airbnb.propertyprovidedamenities"),
+    ("sample_inclusions.csv", "airbnb.inclusion"),
     ("sample_experience_languages.csv", "airbnb.experiencelanguages"),
     ("sample_experience_inclusions.csv", "airbnb.experienceinclusions"),
     ("sample_property_bookings.csv", "airbnb.propertybooking"),
@@ -38,4 +77,19 @@ info = [
     ("sample_exp_reviews.csv", "airbnb.experiencereview"),
     ("sample_email.csv", "airbnb.emailaddresss"),
     ("sample_phonenumbers.csv", "airbnb.phonenumber"),
+    ("sample_property_amenities.csv", "airbnb.propertyprovidedamenities"),
 ]
+
+for info in info_list:
+    insert_data(info, cur)
+    print("done for ", info[1])
+
+branch_df = pd.read_csv("sample_branches.csv")
+for _, b in branch_df.iterrows():
+    cur.execute(
+        "UPDATE airbnb.branch SET managerid = "
+        + b["ManagerId"]
+        + " WHERE branchid = "
+        + b["BranchId"]
+    )
+conn.commit()
