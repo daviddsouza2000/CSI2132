@@ -43,9 +43,9 @@ def insert_data(info, cur):
 
 
 conn = psy.connect(
-    dbname="apoch012",
-    user="apoch012",
-    password="3I6WjM8eWUo&",
+    dbname="ddsou046",
+    user="ddsou046",
+    password="",
     port="15432",
     host="web0.eecs.uottawa.ca",
 )
