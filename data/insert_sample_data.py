@@ -34,6 +34,9 @@ def insert_data(info, cur):
         if tablename == "airbnb.branch":
             data[1] = None
 
+        if tablename == "airbnb.phonenumber":
+            data[0] = str(data[0])
+
         args_str = cur.mogrify(values_template, data).decode("utf-8")
 
         cur.execute("INSERT INTO " + tablename + cols_str + " VALUES " + args_str + ";")
@@ -50,15 +53,9 @@ conn = psy.connect(
 # allows interaction with database
 cur = conn.cursor()
 
-""" 
->>> SQL = 'INSERT INTO authors (name) VALUES (%s);' # Note: no quotes
->>> data = ('OReilly', )
->>> cur.execute(SQL, data) # Note: no % operator
-"""
-# TODO: break up the inserts into a few chunks to allow for later inserts to succeed
-# namely, I have to do all of the property/experience inserts before the relations that rely on them
 info_list = [
     ("sample_users.csv", "airbnb.user"),
+    ("sample_phonenumbers.csv", "airbnb.phonenumber"),
     ("sample_branches.csv", "airbnb.branch"),
     ("sample_employees.csv", "airbnb.employee"),
     ("sample_properties_clean.csv", "airbnb.property"),
@@ -73,10 +70,9 @@ info_list = [
     ("sample_payments.csv", "airbnb.payment"),
     ("sample_property_payments.csv", "airbnb.propertypayments"),
     ("sample_experience_payments.csv", "airbnb.experiencepayments"),
-    ("sample_prop_review.csv", "airbnb.propertyreview"),
+    ("sample_prop_reviews.csv", "airbnb.propertyreview"),
     ("sample_exp_reviews.csv", "airbnb.experiencereview"),
-    ("sample_email.csv", "airbnb.emailaddresss"),
-    ("sample_phonenumbers.csv", "airbnb.phonenumber"),
+    ("sample_email.csv", "airbnb.emailaddress"),
     ("sample_property_amenities.csv", "airbnb.propertyprovidedamenities"),
 ]
 
@@ -87,9 +83,8 @@ for info in info_list:
 branch_df = pd.read_csv("sample_branches.csv")
 for _, b in branch_df.iterrows():
     cur.execute(
-        "UPDATE airbnb.branch SET managerid = "
-        + b["ManagerId"]
-        + " WHERE branchid = "
-        + b["BranchId"]
+        "UPDATE airbnb.branch SET managerid = {0} WHERE branchid = {1}".format(
+            b["ManagerId"], b["BranchId"]
+        )
     )
 conn.commit()

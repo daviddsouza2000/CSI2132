@@ -4,6 +4,8 @@ import random as rand
 payment_df = pd.read_csv("sample_payments.csv")
 booking_df = pd.read_csv("sample_experience_bookings.csv")
 
+booking_df.drop(booking_df.filter(regex="Unname"), axis=1, inplace=True)
+
 result_df = pd.DataFrame(columns=["PaymentId", "ExperienceId", "BookingId"])
 
 bookings = list(booking_df.values)
