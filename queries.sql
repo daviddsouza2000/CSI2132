@@ -1,4 +1,31 @@
 
+/* 1
+Comments: property has no "rental type"
+*/
+with v as(
+with t as(
+with s as (
+select * from propertybooking natural join propertypayments
+)
+select * from payment natural join s
+)
+select * from airbnb.user natural join t
+)
+select * from property join v on property.propertyid = v.propertyid
+)
+select firstnamefirst(firstname,lastname) as guest_name, price as rental_price,
+datebooked as signing_date,name as branch_name, type as payment_type, status as payment_status
+from branch natural join w
+order by type, datebooked desc;
+
+/* 2
+Comments: users (guests) are not connected to any branch
+*/
+create view GuestListView as
+select * from airbnb.user
+order by userid;
+
+
 /* 3 */
 select bookingid, propertyid,userid,numguests,datebooked,startdatetime,enddatetime,price from
 propertybooking natural join propertypayments, payment
