@@ -5,7 +5,7 @@ from enums import *
 conn = psy.connect(
     dbname="apoch012",
     user="apoch012",
-    password="",
+    password="&",
     port="15432",
     host="web0.eecs.uottawa.ca",
 )
@@ -50,10 +50,26 @@ def insert(tablename, values):
 
 
 def host_select_listings(listing_type, host_id):
-    tablename = (
+    tablename = get_listing_tablename(listing_type)
+    cur.execute("SELECT * FROM {0} WHERE HostId = {1}".format(tablename, host_id))
+    return cur.fetchall()
+
+
+def update_listing(listing_type, listing, attrib, value):
+    tablename = get_listing_tablename(listing_type)
+    id_string = "PropertyId" if listing_type == ListingType.Property else "ExperienceId"
+    cur.execute(
+        "UPDATE {0} SET {1} = %s  WHERE {2} = {3}".format(
+            tablename, attrib, id_string, listing[0]
+        ),
+        (value,),
+    )
+    conn.commit()
+
+
+def get_listing_tablename(listing_type):
+    return (
         "airbnb.property"
         if listing_type == ListingType.Property
         else "airbnb.experience"
     )
-    cur.execute("SELECT * FROM {0} WHERE HostId = {1}".format(tablename, host_id))
-    return cur.fetchall()
