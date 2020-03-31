@@ -17,6 +17,7 @@ result_df = pd.DataFrame(
         "NumBedrooms",
         "NumBeds",
         "NumBaths",
+        "Price",
     ]
 )
 
@@ -28,6 +29,7 @@ for i, prop in property_df.iterrows():
     description = prop["description"]
     num_guests = prop["accommodates"]
     num_baths = prop["bathrooms"]
+    price = rand.randint(200, 1000)
     try:
         num_baths = int(num_baths)
     except:
@@ -56,6 +58,7 @@ for i, prop in property_df.iterrows():
             "NumBedrooms": num_bedrooms,
             "NumBeds": num_beds,
             "NumBaths": num_beds,
+            "Price": price,
         },
         ignore_index=True,
     )
