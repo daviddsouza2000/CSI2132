@@ -1,8 +1,6 @@
 import backend
-
-
-def handle_employee():
-    pass
+from enums import *
+from prettytable import PrettyTable
 
 
 def create_user():
@@ -15,6 +13,10 @@ def create_user():
     return backend.create_user(firstname, lastname, housenumber, street, city, province)
 
 
+def handle_employee():
+    pass
+
+
 def handle_host():
     existing_user = int(input("(1) Login, (2) Register: "))
     user_id = -1
@@ -23,22 +25,67 @@ def handle_host():
         user_id = int(input("Enter your id "))
     else:
         user_id = create_user()
-        print(user_id)
+        print(
+            "Your user id is {0}. Do not forget this value if you wish to return.".format(
+                user_id
+            )
+        )
 
     while True:
         choice = int(input("(1) View listings, (2) Add listing: "))
         if choice == 1:
-            listing_type = int(input("(1) Experience or (2) Property: "))
+            listing_type = ListingType(int(input("(1) Experience or (2) Property: ")))
 
 
 def handle_guest():
     pass
 
 
+# TODO: consider instead of branch_id actualy getting the branch name as that makes more sense to users
+def display_listings(listing_type, host_id):
+    headers = []
+    if listing_type == ListingType.Property:
+        headers = [
+            "PropertyId",
+            "HostId",
+            "BranchId",
+            "Title",
+            "Description",
+            "NumGuests",
+            "NumBedrooms",
+            "NumBeds",
+            "NumBaths",
+            "Price",
+        ]
+    else:
+        headers = [
+            "ExperienceId",
+            "HostId",
+            "BranchId",
+            "Title",
+            "Description",
+            "Duration",
+            "GroupSize",
+            "Price",
+        ]
+
+    t = PrettyTable(headers)
+
+    rows = backend.host_select_listings(listing_type, host_id)
+
+    for row in rows:
+        row = list(row)
+        # This is to truncate the description
+        row[4] = row[4][:50] + "..."
+        t.add_row(row)
+    print(t)
+
+
 while True:
     user_type = input(
         "Welcome to the Airbnb application, are you a (G)uest, (H)ost, or (E)mployee? "
     )
+    display_listings(ListingType.Property, 851012)
 
     if user_type == "E":
         handle_employee()

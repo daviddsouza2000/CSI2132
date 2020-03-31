@@ -1,10 +1,11 @@
 import psycopg2 as psy
 import random as rand
+from enums import *
 
 conn = psy.connect(
     dbname="apoch012",
     user="apoch012",
-    password="&",
+    password="",
     port="15432",
     host="web0.eecs.uottawa.ca",
 )
@@ -46,3 +47,13 @@ def insert(tablename, values):
     args_str = cur.mogrify(values_template, values).decode("utf-8")
     cur.execute(SQL + args_str + ";")
     conn.commit()
+
+
+def host_select_listings(listing_type, host_id):
+    tablename = (
+        "airbnb.property"
+        if listing_type == ListingType.Property
+        else "airbnb.experience"
+    )
+    cur.execute("SELECT * FROM {0} WHERE HostId = {1}".format(tablename, host_id))
+    return cur.fetchall()
