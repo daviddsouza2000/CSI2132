@@ -2,3 +2,4 @@ data/temp/*.csv
 *.swp
 *.swo
 .DS_STORE
+__pycache__/
