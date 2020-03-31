@@ -2,9 +2,32 @@ import backend
 from enums import *
 from prettytable import PrettyTable
 
-integer_types = set(["groupsize", "numguests", "numbedrooms", "numbaths", "numbeds"])
-float_types = set(["price"])
+integer_types = set(
+    [
+        "groupsize",
+        "numguests",
+        "numbedrooms",
+        "numbaths",
+        "numbeds",
+        "Number of Guests",
+        "Number of Bedrooms",
+        "Number of Beds",
+        "Number of Baths",
+    ]
+)
+float_types = set(["price", "Price"])
 time_types = set(["duration"])
+
+# TODO: add branchid later
+property_attributes = [
+    "Title",
+    "Description",
+    "Number of Guests",
+    "Number of Bedrooms",
+    "Number of Beds",
+    "Number of Baths",
+    "Price",
+]
 
 valid_attributes = {
     "Property": set(
@@ -69,6 +92,9 @@ def handle_host():
                 )
                 if action == 1:
                     edit_listing_attribute(listing, listing_type)
+        else:
+            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            create_listing(user_id, listing_type)
 
 
 def handle_guest():
@@ -81,22 +107,45 @@ def edit_listing_attribute(listing, listing_type):
         if attrib not in valid_attributes[listing_type.name]:
             print("Error: invalid attribute")
             continue
-        value = input("Enter the updated value ")
-        if attrib in integer_types:
-            if not isinstance(value, int):
+        value = input_attribute(attrib)
+
+        backend.update_listing(listing_type, listing, attrib, value)
+        yes = input("Would you like to update another value? (y/n) ") == "y"
+        if not yes:
+            break
+
+
+def create_listing(host_id, listing_type):
+    inputs = []
+    if listing_type == ListingType.Property:
+        for attrib in property_attributes:
+            inputs.append(input_attribute(attrib))
+        inputs = [host_id, None] + inputs  # the none here is temp for branchid
+        backend.insert_listing(listing_type, inputs)
+
+
+def input_attribute(attribute_name):
+    while True:
+        value = input("Enter value for {0}: ".format(attribute_name))
+        if attribute_name in integer_types:
+            if not is_type(value, int):
                 print("Error: value must be an integer")
                 continue
             value = int(value)
-        elif attrib in float_types:
-            if not isinstance(value, float):
+        elif attribute_name in float_types:
+            if not is_type(value, float):
                 print("Error: value must be a float")
                 continue
             value = float(value)
+        return value
 
-        backend.update_listing(listing_type, listing, attrib, value)
-        yes = input("Would you like to update another value? (y/n)") == "y"
-        if not yes:
-            break
+
+def is_type(x, t):
+    try:
+        t(x)
+        return True
+    except:
+        return False
 
 
 # TODO: consider instead of branch_id actualy getting the branch name as that makes more sense to users
@@ -135,7 +184,7 @@ def display_listings(listing_type, host_id):
     index = 1
     for row in rows:
         row = list(row)
-        # This is to truncate the description
+        # This is to truncate the description, otherwise the table looks gross
         row[4] = row[4][:50] + "..."
         t.add_row([index] + row)
         index += 1

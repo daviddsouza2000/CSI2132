@@ -5,19 +5,20 @@ from enums import *
 conn = psy.connect(
     dbname="apoch012",
     user="apoch012",
-    password="&",
+    password="",
     port="15432",
     host="web0.eecs.uottawa.ca",
 )
 
 cur = conn.cursor()
 
+min_id = 1000
+max_id = 999999
+
 
 def create_user(
     firstname, lastname, housenumber, street, city, province, is_super_host=False
 ):
-    min_id = 1000
-    max_id = 999999
 
     user_id = rand.randint(min_id, max_id)
     insert(
@@ -47,6 +48,12 @@ def insert(tablename, values):
     args_str = cur.mogrify(values_template, values).decode("utf-8")
     cur.execute(SQL + args_str + ";")
     conn.commit()
+
+
+def insert_listing(listing_type, values):
+    tablename = get_listing_tablename(listing_type)
+    listing_id = rand.randint(min_id, max_id)
+    insert(tablename, [listing_id] + values)
 
 
 def host_select_listings(listing_type, host_id):
