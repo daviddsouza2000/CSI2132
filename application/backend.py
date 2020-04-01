@@ -62,7 +62,10 @@ def insert_listing(listing_type, values):
 
 def host_select_listings(listing_type, host_id):
     tablename = get_listing_tablename(listing_type)
-    cur.execute("SELECT * FROM {0} WHERE HostId = {1}".format(tablename, host_id))
+    if host_id != None:
+        cur.execute("SELECT * FROM {0} WHERE HostId = {1}".format(tablename, host_id))
+    else:
+        cur.execute("SELECT * FROM {0} ".format(tablename))
     return cur.fetchall()
 
 
@@ -86,6 +89,12 @@ def delete_listing(listing, listing_type):
     )
 
 
+def create_booking(listing_type, inputs):
+    booking_tablename = get_booking_tablename(listing_type)
+    booking_id = rand.randint(min_id, max_id)
+    insert(booking_tablename, [booking_id] + inputs)
+
+
 def get_listing_bookings(listing, listing_type):
     booking_tablename = get_booking_tablename(listing_type)
     id_string = "PropertyId" if listing_type == ListingType.Property else "ExperienceId"
@@ -93,6 +102,14 @@ def get_listing_bookings(listing, listing_type):
         "SELECT * FROM {0} WHERE {1} = {2}".format(
             booking_tablename, id_string, listing[0]
         )
+    )
+    return cur.fetchall()
+
+
+def get_user_bookings(listing_type, user_id):
+    booking_tablename = get_booking_tablename(listing_type)
+    cur.execute(
+        "SELECT * FROM {0} WHERE userid = {1}".format(booking_tablename, user_id)
     )
     return cur.fetchall()
 
@@ -122,3 +139,14 @@ def get_branches():
         branch_map[row[1].lower()] = row[0]
         names.append(row[1])
     return names
+
+
+def get_unavailable_intervals(listing, listing_type):
+    booking_tablename = get_booking_tablename(listing_type)
+    id_string = "PropertyId" if listing_type == ListingType.Property else "ExperienceId"
+    cur.execute(
+        "SELECT StartDateTime, EndDateTime FROM {0} WHERE {1} = {2}".format(
+            booking_tablename, id_string, listing[0]
+        )
+    )
+    return cur.fetchall()

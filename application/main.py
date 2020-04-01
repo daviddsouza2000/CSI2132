@@ -1,6 +1,7 @@
 import backend
 from enums import *
 from prettytable import PrettyTable
+from datetime import datetime
 
 branch_names = backend.get_branches()
 
@@ -19,12 +20,15 @@ integer_types = set(
         "hours",
         "minutes",
         "seconds",
+        "day",
+        "month",
+        "year",
     ]
 )
 float_types = set(["price", "Price"])
 time_types = set(["duration", "Duration"])
 time_unit_types = set(["hours", "minutes", "seconds"])
-date_types = set()
+date_types = set(["startdate", "enddate"])
 const_types = {"Branch Name": branch_names}
 
 # TODO: add branchid later
@@ -74,11 +78,7 @@ def create_user():
     return backend.create_user(firstname, lastname, housenumber, street, city, province)
 
 
-def handle_employee():
-    pass
-
-
-def handle_host():
+def get_user_id():
     existing_user = int(input("(1) Login, (2) Register: "))
     user_id = -1
 
@@ -91,7 +91,15 @@ def handle_host():
                 user_id
             )
         )
+    return user_id
 
+
+def handle_employee():
+    pass
+
+
+def handle_host():
+    user_id = get_user_id()
     while True:
         choice = int(input("(1) View listings, (2) Add listing: "))
         if choice == 1:
@@ -114,14 +122,33 @@ def handle_host():
                 elif action == 2:
                     delete_listing(listing, listing_type)
                 elif action == 3:
-                    display_bookings(listing_type, listing)
+                    display_listing_bookings(listing_type, listing)
         else:
             listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
             create_listing(user_id, listing_type)
 
 
 def handle_guest():
-    pass
+    user_id = get_user_id()
+    while True:
+        choice = int(input("(1) View listings |  (2) View your bookings: "))
+        if choice == 1:
+            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listings = display_listings(listing_type, None)
+            view_listing = (
+                input("Would you like to view a specific listing? (y/n) ") == "y"
+            )
+            if view_listing:
+                index = int(input("Enter the index of the listing you wish to view: "))
+                listing = listings[index - 1]
+                display_listing(listing, listing_type)
+                action = int(input("Actions: (0) Go back | (1) Create Booking: "))
+                if action == 1:
+                    if listing_type == ListingType.Property:
+                        create_property_booking(listing, user_id)
+        else:
+            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            bookings = display_user_bookings(listing_type, user_id)
 
 
 def edit_listing_attribute(listing, listing_type):
@@ -155,6 +182,66 @@ def create_listing(host_id, listing_type):
 def delete_listing(listing, listing_type):
     backend.delete_listing(listing, listing_type)
     print("Successfully deleted listing")
+
+
+def create_property_booking(listing, user_id):
+    constraints = {}
+    constraints["numguests"] = listing[5]
+
+    invalid_intervals = backend.get_unavailable_intervals(listing, ListingType.Property)
+    print(invalid_intervals)
+
+    inputs = [listing[0], user_id]
+    while True:
+        num_guests = input_attribute("numguests")
+        if num_guests > constraints["numguests"]:
+            print(
+                "Error: there cannot be more than the max({0}) number of guests".format(
+                    constraints["numguests"]
+                )
+            )
+        else:
+            inputs.append(num_guests)
+            break
+    date_booked = datetime.today()
+    date_booked_str = date_booked.strftime("%m/%d/%Y %H:%M:%S")
+    inputs.append(date_booked_str)
+
+    while True:
+        start_date = input_attribute("startdate")
+        if date_booked >= start_date:
+            print("Error: Start Date must be after Date Booked")
+            continue
+        if date_within_unavailable_interval(invalid_intervals, start_date):
+            print("Error: start date falls within another booking")
+            continue
+        inputs.append(start_date.strftime("%m/%d/%Y %H:%M:%S"))
+        break
+
+    while True:
+        end_date = input_attribute("enddate")
+        if end_date <= start_date:
+            print("Error: End Date must be after Start Date")
+            continue
+        if date_within_unavailable_interval(invalid_intervals, end_date):
+            print("Error: End Date falls within another booking")
+            continue
+        inputs.append(end_date.strftime("%m/%d/%Y %H:%M:%S"))
+        break
+    price = listing[-1]
+    inputs.append(price)
+    backend.create_booking(ListingType.Property, inputs)
+
+
+def date_within_unavailable_interval(intervals, date):
+    # no intervals means any date is fine
+    if len(intervals) == 0:
+        return False
+
+    for interval in intervals:
+        if date <= interval[0] and date >= interval[1]:
+            return True
+    return False
 
 
 def input_attribute(attribute_name):
@@ -204,6 +291,16 @@ def input_attribute(attribute_name):
             if value not in valid_values:
                 print("Error: invalid value")
                 continue
+        elif attribute_name in date_types:
+            print("Enter {0} (all integers): ".format(attribute_name))
+            day = input_attribute("day")
+            month = input_attribute("month")
+            year = input_attribute("year")
+            if not is_valid_date(day, month, year):
+                print("Error: Invalid date")
+                continue
+            return datetime(year, month, day)
+
         else:
             value = input("Enter value for {0}: ".format(attribute_name))
 
@@ -213,6 +310,14 @@ def input_attribute(attribute_name):
 def is_type(x, t):
     try:
         t(x)
+        return True
+    except:
+        return False
+
+
+def is_valid_date(day, month, year):
+    try:
+        datetime(year, month, day)
         return True
     except:
         return False
@@ -272,7 +377,7 @@ def display_listings(listing_type, host_id):
     return rows
 
 
-def display_bookings(listing_type, listing):
+def display_listing_bookings(listing_type, listing):
     headers = [
         "Index",
         "BookingID",
@@ -287,6 +392,30 @@ def display_bookings(listing_type, listing):
     t = PrettyTable(headers)
 
     rows = backend.get_listing_bookings(listing, listing_type)
+    index = 1
+    for row in rows:
+        row = list(row)
+        t.add_row([index] + row)
+        index += 1
+    print(t)
+    return rows
+
+
+def display_user_bookings(listing_type, user_id):
+    headers = [
+        "Index",
+        "BookingID",
+        "Property/Experience ID",
+        "UserId",
+        "NumGuests",
+        "DateBooked",
+        "StartDateTime",
+        "EndDateTime",
+        "Price",
+    ]
+    t = PrettyTable(headers)
+
+    rows = backend.get_user_bookings(listing_type, user_id)
     index = 1
     for row in rows:
         row = list(row)
