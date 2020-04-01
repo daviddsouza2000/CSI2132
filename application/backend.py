@@ -15,6 +15,8 @@ cur = conn.cursor()
 min_id = 1000
 max_id = 999999
 
+branch_map = {}
+
 
 def create_user(
     firstname, lastname, housenumber, street, city, province, is_super_host=False
@@ -53,6 +55,8 @@ def insert(tablename, values):
 def insert_listing(listing_type, values):
     tablename = get_listing_tablename(listing_type)
     listing_id = rand.randint(min_id, max_id)
+    # convert branchname to branchid
+    values[1] = branch_map[values[1].lower()]
     insert(tablename, [listing_id] + values)
 
 
@@ -74,9 +78,28 @@ def update_listing(listing_type, listing, attrib, value):
     conn.commit()
 
 
+def delete_listing(listing, listing_type):
+    tablename = get_listing_tablename(listing_type)
+    id_string = "PropertyId" if listing_type == ListingType.Property else "ExperienceId"
+    cur.execute(
+        "DELETE FROM {0} WHERE {1} = {2};".format(tablename, id_string, listing[0])
+    )
+
+
 def get_listing_tablename(listing_type):
     return (
         "airbnb.property"
         if listing_type == ListingType.Property
         else "airbnb.experience"
     )
+
+
+def get_branches():
+    cur.execute("SELECT branchid, name from airbnb.branch")
+    data = cur.fetchall()
+    names = []
+    for row in data:
+        # mapping branchname to branchid
+        branch_map[row[1].lower()] = row[0]
+        names.append(row[1])
+    return names
