@@ -1,7 +1,7 @@
 import backend
 from enums import *
 from prettytable import PrettyTable
-from datetime import datetime
+from datetime import datetime, timedelta
 
 branch_names = backend.get_branches()
 
@@ -26,12 +26,11 @@ integer_types = set(
     ]
 )
 float_types = set(["price", "Price"])
-time_types = set(["duration", "Duration"])
+time_types = set(["duration", "Duration", "time"])
 time_unit_types = set(["hours", "minutes", "seconds"])
-date_types = set(["startdate", "enddate"])
+datetime_types = set(["startdate", "enddate"])
 const_types = {"Branch Name": branch_names}
 
-# TODO: add branchid later
 property_attributes = [
     "Branch Name",
     "Title",
@@ -146,6 +145,8 @@ def handle_guest():
                 if action == 1:
                     if listing_type == ListingType.Property:
                         create_property_booking(listing, user_id)
+                    else:
+                        create_experience_booking(listing, user_id)
         else:
             listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
             bookings = display_user_bookings(listing_type, user_id)
@@ -184,20 +185,66 @@ def delete_listing(listing, listing_type):
     print("Successfully deleted listing")
 
 
-def create_property_booking(listing, user_id):
-    constraints = {}
-    constraints["numguests"] = listing[5]
+def create_experience_booking(listing, user_id):
+    max_guests = listing[6]
+    duration = listing[5]
+    invalid_intervals = backend.get_unavailable_intervals(
+        listing, ListingType.Experience
+    )
+    print(invalid_intervals)
 
+    inputs = [listing[0], user_id]
+
+    while True:
+        num_guests = input_attribute("numguests")
+        if num_guests > max_guests:
+            print(
+                "Error: there cannot be more than the max({0}) number of guests".format(
+                    max_guests
+                )
+            )
+        else:
+            inputs.append(num_guests)
+            break
+    date_booked = datetime.today()
+    date_booked_str = date_booked.strftime("%m/%d/%Y %H:%M:%S")
+    inputs.append(date_booked_str)
+    while True:
+        start_date = input_attribute("startdate")
+        if date_booked >= start_date:
+            print("Error: Start Date must be after Date Booked")
+            continue
+        if date_within_unavailable_interval(invalid_intervals, start_date):
+            print("Error: start date falls within another booking")
+            continue
+        duration_delta = timedelta(hours=duration.hour, minutes=duration.minute)
+        end_date = start_date + duration_delta
+        if date_within_unavailable_interval(invalid_intervals, end_date):
+            print(
+                "Error: Chosen start date does not provide enough time to complete experience"
+            )
+            continue
+        inputs.append(start_date.strftime("%m/%d/%Y %H:%M:%S"))
+        inputs.append(end_date.strftime("%m/%d/%Y %H:%M:%S"))
+        break
+
+    price = listing[-1]
+    inputs.append(price)
+    backend.create_booking(ListingType.Experience, inputs)
+
+
+def create_property_booking(listing, user_id):
+    max_guests = listing[5]
     invalid_intervals = backend.get_unavailable_intervals(listing, ListingType.Property)
     print(invalid_intervals)
 
     inputs = [listing[0], user_id]
     while True:
         num_guests = input_attribute("numguests")
-        if num_guests > constraints["numguests"]:
+        if num_guests > max_guests:
             print(
                 "Error: there cannot be more than the max({0}) number of guests".format(
-                    constraints["numguests"]
+                    max_guests
                 )
             )
         else:
@@ -239,7 +286,7 @@ def date_within_unavailable_interval(intervals, date):
         return False
 
     for interval in intervals:
-        if date <= interval[0] and date >= interval[1]:
+        if date >= interval[0] and date <= interval[1]:
             return True
     return False
 
@@ -291,7 +338,7 @@ def input_attribute(attribute_name):
             if value not in valid_values:
                 print("Error: invalid value")
                 continue
-        elif attribute_name in date_types:
+        elif attribute_name in datetime_types:
             print("Enter {0} (all integers): ".format(attribute_name))
             day = input_attribute("day")
             month = input_attribute("month")
@@ -299,7 +346,12 @@ def input_attribute(attribute_name):
             if not is_valid_date(day, month, year):
                 print("Error: Invalid date")
                 continue
-            return datetime(year, month, day)
+            time = input_attribute("time")
+            components = time.split(":")
+            hours = int(components[0])
+            minutes = int(components[1])
+
+            return datetime(year, month, day, hours, minutes)
 
         else:
             value = input("Enter value for {0}: ".format(attribute_name))

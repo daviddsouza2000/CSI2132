@@ -87,6 +87,7 @@ def delete_listing(listing, listing_type):
     cur.execute(
         "DELETE FROM {0} WHERE {1} = {2};".format(tablename, id_string, listing[0])
     )
+    conn.commit()
 
 
 def create_booking(listing_type, inputs):
