@@ -113,6 +113,8 @@ def handle_host():
                     edit_listing_attribute(listing, listing_type)
                 elif action == 2:
                     delete_listing(listing, listing_type)
+                elif action == 3:
+                    display_bookings(listing_type, listing)
         else:
             listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
             create_listing(user_id, listing_type)
@@ -264,6 +266,30 @@ def display_listings(listing_type, host_id):
         # This is to truncate the description, otherwise the table looks gross
         if len(row[4]) > 50:
             row[4] = row[4][:50] + "..."
+        t.add_row([index] + row)
+        index += 1
+    print(t)
+    return rows
+
+
+def display_bookings(listing_type, listing):
+    headers = [
+        "Index",
+        "BookingID",
+        "Property/Experience ID",
+        "UserId",
+        "NumGuests",
+        "DateBooked",
+        "StartDateTime",
+        "EndDateTime",
+        "Price",
+    ]
+    t = PrettyTable(headers)
+
+    rows = backend.get_listing_bookings(listing, listing_type)
+    index = 1
+    for row in rows:
+        row = list(row)
         t.add_row([index] + row)
         index += 1
     print(t)

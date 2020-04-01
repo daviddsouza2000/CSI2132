@@ -86,11 +86,30 @@ def delete_listing(listing, listing_type):
     )
 
 
+def get_listing_bookings(listing, listing_type):
+    booking_tablename = get_booking_tablename(listing_type)
+    id_string = "PropertyId" if listing_type == ListingType.Property else "ExperienceId"
+    cur.execute(
+        "SELECT * FROM {0} WHERE {1} = {2}".format(
+            booking_tablename, id_string, listing[0]
+        )
+    )
+    return cur.fetchall()
+
+
 def get_listing_tablename(listing_type):
     return (
         "airbnb.property"
         if listing_type == ListingType.Property
         else "airbnb.experience"
+    )
+
+
+def get_booking_tablename(listing_type):
+    return (
+        "airbnb.propertybooking"
+        if listing_type == ListingType.Property
+        else "airbnb.experiencebooking"
     )
 
 
