@@ -115,6 +115,14 @@ def get_user_bookings(listing_type, user_id):
     return cur.fetchall()
 
 
+def delete_booking(booking, listing_type):
+    booking_tablename = get_booking_tablename(listing_type)
+    cur.execute(
+        "DELETE FROM {0} WHERE bookingid = {1};".format(booking_tablename, booking[0])
+    )
+    conn.commit()
+
+
 def get_listing_tablename(listing_type):
     return (
         "airbnb.property"

@@ -150,6 +150,29 @@ def handle_guest():
         else:
             listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
             bookings = display_user_bookings(listing_type, user_id)
+            interact_booking = (
+                input("Would you like to interact with a specific booking? (y/n) ")
+                == "y"
+            )
+            if interact_booking:
+                index = int(
+                    input("Enter the index of the booking you wish to interact with: ")
+                )
+                booking = bookings[index - 1]
+                action = int(
+                    input(
+                        "Actions: (0) Go back | (1) Make Payment | (2) Delete Booking: "
+                    )
+                )
+                if action == 1:
+                    break
+                elif action == 2:
+                    delete_booking(booking, listing_type)
+
+
+def delete_booking(booking, listing_type):
+    backend.delete_booking(booking, listing_type)
+    print("Successfully deleted booking")
 
 
 def edit_listing_attribute(listing, listing_type):
