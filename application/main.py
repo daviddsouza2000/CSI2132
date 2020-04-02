@@ -502,6 +502,9 @@ def display_user_bookings(listing_type, user_id):
 
 def display_listing(listing, listing_type):
     headers = []
+    amenities_str = ""
+    inclusions_str = ""
+    languages_str = ""
     if listing_type == ListingType.Property:
         headers = [
             "PropertyId",
@@ -515,6 +518,11 @@ def display_listing(listing, listing_type):
             "NumBaths",
             "Price",
         ]
+        amenities = backend.get_property_amenities(listing[0])
+        for a in amenities:
+            amenities_str += a[0] + ","
+        amenities_str = amenities_str[:-1]
+
     else:
         headers = [
             "ExperienceId",
@@ -526,8 +534,23 @@ def display_listing(listing, listing_type):
             "GroupSize",
             "Price",
         ]
-    for i in range(len(headers)):
+        inclusions = backend.get_experience_inclusions(listing[0])
+        for i in inclusions:
+            inclusions_str += i[0] + ","
+        inclusions_str = inclusions_str[:-1]
+
+        languages = backend.get_experience_languages(listing[0])
+        for l in languages:
+            languages_str += l[0] + ","
+        languages_str = languages_str[:-1]
+
+    for i in range(len(listing)):
         print("{0}: {1}".format(headers[i], listing[i]))
+    if listing_type == ListingType.Property:
+        print("Amenities: " + amenities_str)
+    else:
+        print("Inclusions: " + inclusions_str)
+        print("Languages: " + languages_str)
 
 
 while True:

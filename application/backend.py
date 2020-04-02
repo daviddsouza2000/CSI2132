@@ -159,3 +159,30 @@ def get_unavailable_intervals(listing, listing_type):
         )
     )
     return cur.fetchall()
+
+
+def get_property_amenities(property_id):
+    cur.execute(
+        "SELECT amenityname from airbnb.propertyprovidedamenities where propertyid = {0}".format(
+            property_id
+        )
+    )
+    return cur.fetchall()
+
+
+def get_experience_inclusions(experience_id):
+    cur.execute(
+        "SELECT inclusionname from airbnb.experienceinclusions where experienceid = {0}".format(
+            experience_id
+        )
+    )
+    return cur.fetchall()
+
+
+def get_experience_languages(experience_id):
+    cur.execute(
+        "SELECT languagename from airbnb.experiencelanguages where experienceid = {0}".format(
+            experience_id
+        )
+    )
+    return cur.fetchall()
