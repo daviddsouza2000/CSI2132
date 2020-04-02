@@ -115,8 +115,32 @@ def get_user_id():
     return user_id
 
 
+def get_employee_id():
+    emp_id = int(input("Enter your employee id: "))
+    return emp_id
+
+
 def handle_employee():
-    pass
+    emp_id = get_employee_id()
+    while True:
+        choice = int(
+            input(
+                "(1) View all listings | (2) View listing given branch | (3) View all users | (4) View all hosts | (5) View all superhosts: "
+            )
+        )
+        if choice == 1:
+            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listings = display_employee_listings(listing_type, None)
+        elif choice == 2:
+            branch = input_attribute("Branch Name")
+            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listings = display_employee_listings(listing_type, branch)
+        elif choice == 3:
+            display_users()
+        elif choice == 4:
+            display_hosts(False)
+        elif choice == 5:
+            display_hosts(True)
 
 
 def handle_host():
@@ -183,15 +207,45 @@ def handle_guest():
                     input("Enter the index of the booking you wish to interact with: ")
                 )
                 booking = bookings[index - 1]
-                action = int(
-                    input(
-                        "Actions: (0) Go back | (1) Make Payment | (2) Delete Booking: "
-                    )
-                )
+                action = int(input("Actions: (0) Go back | (1) Delete Booking: "))
                 if action == 1:
-                    break
-                elif action == 2:
                     delete_booking(booking, listing_type)
+
+
+def display_users():
+    headers = [
+        "UserId",
+        "FirstName",
+        "LastName",
+        "House Number",
+        "Street",
+        "City",
+        "Province",
+        "Is Super Host",
+    ]
+    t = PrettyTable(headers)
+    users = backend.get_all_users()
+    for user in users:
+        t.add_row(list(user))
+    print(t)
+
+
+def display_hosts(only_super_host):
+    headers = [
+        "UserId",
+        "FirstName",
+        "LastName",
+        "House Number",
+        "Street",
+        "City",
+        "Province",
+        "Is Super Host",
+    ]
+    t = PrettyTable(headers)
+    users = backend.get_all_hosts(only_super_host)
+    for user in users:
+        t.add_row(list(user))
+    print(t)
 
 
 def make_payment(booking_id, prop_exp_id, listing_type):
@@ -242,7 +296,7 @@ def create_experience_booking(listing, user_id):
     invalid_intervals = backend.get_unavailable_intervals(
         listing, ListingType.Experience
     )
-    print(invalid_intervals)
+    display_invalid_intervals(invalid_intervals)
 
     inputs = [listing[0], user_id]
 
@@ -284,10 +338,20 @@ def create_experience_booking(listing, user_id):
     return backend.create_booking(ListingType.Experience, inputs)
 
 
+def display_invalid_intervals(intervals):
+    print("----")
+    print("Unavailable between the following intervals: ")
+    for interval in intervals:
+        i1 = interval[0].strftime("%m/%d/%Y %H:%M:%S")
+        i2 = interval[1].strftime("%m/%d/%Y %H:%M:%S")
+        print(i1, "to", i2)
+    print("----")
+
+
 def create_property_booking(listing, user_id):
     max_guests = listing[5]
     invalid_intervals = backend.get_unavailable_intervals(listing, ListingType.Property)
-    print(invalid_intervals)
+    display_invalid_intervals(invalid_intervals)
 
     inputs = [listing[0], user_id]
     while True:
@@ -491,6 +555,48 @@ def display_listings(listing_type, host_id):
     t = PrettyTable(headers)
 
     rows = backend.host_select_listings(listing_type, host_id)
+    index = 1
+    for row in rows:
+        row = list(row)
+        # This is to truncate the description, otherwise the table looks gross
+        if len(row[4]) > 50:
+            row[4] = row[4][:50] + "..."
+        t.add_row([index] + row)
+        index += 1
+    print(t)
+    return rows
+
+
+def display_employee_listings(listing_type, branch_name):
+    if listing_type == ListingType.Property:
+        headers = [
+            "Index",
+            "PropertyId",
+            "HostId",
+            "BranchId",
+            "Title",
+            "Description",
+            "NumGuests",
+            "NumBedrooms",
+            "NumBeds",
+            "NumBaths",
+            "Price",
+        ]
+    else:
+        headers = [
+            "Index",
+            "ExperienceId",
+            "HostId",
+            "BranchId",
+            "Title",
+            "Description",
+            "Duration",
+            "GroupSize",
+            "Price",
+        ]
+
+    t = PrettyTable(headers)
+    rows = backend.employee_select_listings(listing_type, branch_name)
     index = 1
     for row in rows:
         row = list(row)

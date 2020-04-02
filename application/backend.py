@@ -95,6 +95,47 @@ def host_select_listings(listing_type, host_id):
     return cur.fetchall()
 
 
+def employee_select_listings(listing_type, branch_name):
+    tablename = get_listing_tablename(listing_type)
+    if branch_name != None:
+        cur.execute(
+            "SELECT branchid from airbnb.branch where name = %s", (branch_name,)
+        )
+        branch_id = cur.fetchall()[0][0]
+        cur.execute(
+            "SELECT * FROM {0} WHERE branchid = {1}".format(tablename, branch_id)
+        )
+        return cur.fetchall()
+    else:
+        cur.execute("SELECT * FROM {0}".format(tablename))
+        return cur.fetchall()
+
+
+def get_all_users():
+    cur.execute("SELECT * FROM airbnb.user")
+    return cur.fetchall()
+
+
+def get_all_hosts(only_super_host=False):
+    if not only_super_host:
+        cur.execute(
+            """
+        SELECT * FROM airbnb.user
+        WHERE EXISTS(SELECT * FROM airbnb.property WHERE hostid = userid)
+        OR EXISTS(SELECT * FROM airbnb.experience WHERE hostid = userid)
+        """
+        )
+    else:
+        cur.execute(
+            """
+        SELECT * FROM airbnb.user
+        WHERE issuperhost = true and ( EXISTS(SELECT * FROM airbnb.property WHERE hostid = userid)
+        OR EXISTS(SELECT * FROM airbnb.experience WHERE hostid = userid))
+        """
+        )
+    return cur.fetchall()
+
+
 def update_listing(listing_type, listing, attrib, value):
     tablename = get_listing_tablename(listing_type)
     id_string = "PropertyId" if listing_type == ListingType.Property else "ExperienceId"
