@@ -94,6 +94,19 @@ def create_booking(listing_type, inputs):
     booking_tablename = get_booking_tablename(listing_type)
     booking_id = rand.randint(min_id, max_id)
     insert(booking_tablename, [booking_id] + inputs)
+    return booking_id
+
+
+def create_payment(booking_id, prop_exp_id, payment_type, listing_type):
+    payment_id = rand.randint(min_id, max_id)
+    insert("airbnb.payment", [payment_id, payment_type, "completed"])
+    tablename = (
+        "airbnb.propertypayments"
+        if listing_type == ListingType.Property
+        else "airbnb.experiencepayments"
+    )
+    insert(tablename, [payment_id, prop_exp_id, booking_id])
+    conn.commit()
 
 
 def get_listing_bookings(listing, listing_type):

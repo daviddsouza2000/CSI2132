@@ -29,7 +29,7 @@ float_types = set(["price", "Price"])
 time_types = set(["duration", "Duration", "time"])
 time_unit_types = set(["hours", "minutes", "seconds"])
 datetime_types = set(["startdate", "enddate"])
-const_types = {"Branch Name": branch_names}
+const_types = {"Branch Name": branch_names, "Payment Type": ["cash", "credit", "debit"]}
 
 property_attributes = [
     "Branch Name",
@@ -144,9 +144,11 @@ def handle_guest():
                 action = int(input("Actions: (0) Go back | (1) Create Booking: "))
                 if action == 1:
                     if listing_type == ListingType.Property:
-                        create_property_booking(listing, user_id)
+                        booking_id = create_property_booking(listing, user_id)
                     else:
-                        create_experience_booking(listing, user_id)
+                        booking_id = create_experience_booking(listing, user_id)
+                    make_payment(booking_id, listing[0], listing_type)
+
         else:
             listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
             bookings = display_user_bookings(listing_type, user_id)
@@ -168,6 +170,11 @@ def handle_guest():
                     break
                 elif action == 2:
                     delete_booking(booking, listing_type)
+
+
+def make_payment(booking_id, prop_exp_id, listing_type):
+    payment_type = input_attribute("Payment Type")
+    backend.create_payment(booking_id, prop_exp_id, payment_type, listing_type)
 
 
 def delete_booking(booking, listing_type):
@@ -253,7 +260,7 @@ def create_experience_booking(listing, user_id):
 
     price = listing[-1]
     inputs.append(price)
-    backend.create_booking(ListingType.Experience, inputs)
+    return backend.create_booking(ListingType.Experience, inputs)
 
 
 def create_property_booking(listing, user_id):
@@ -300,7 +307,7 @@ def create_property_booking(listing, user_id):
         break
     price = listing[-1]
     inputs.append(price)
-    backend.create_booking(ListingType.Property, inputs)
+    return backend.create_booking(ListingType.Property, inputs)
 
 
 def date_within_unavailable_interval(intervals, date):
