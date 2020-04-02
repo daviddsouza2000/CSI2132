@@ -39,7 +39,7 @@ def create_user(
     return user_id
 
 
-def insert(tablename, values):
+def insert(tablename, values, commit=True):
     SQL = "INSERT INTO " + tablename + " VALUES "
 
     values_template = "("
@@ -49,7 +49,8 @@ def insert(tablename, values):
 
     args_str = cur.mogrify(values_template, values).decode("utf-8")
     cur.execute(SQL + args_str + ";")
-    conn.commit()
+    if commit:
+        conn.commit()
 
 
 def insert_listing(listing_type, values):
@@ -57,7 +58,32 @@ def insert_listing(listing_type, values):
     listing_id = rand.randint(min_id, max_id)
     # convert branchname to branchid
     values[1] = branch_map[values[1].lower()]
-    insert(tablename, [listing_id] + values)
+
+    amenities = []
+    inclusions = []
+    languages = []
+    if listing_type == ListingType.Property:
+        amenities = values[-1]
+        values = values[:-1]
+    else:
+        languages = values[-1]
+        inclusions = values[-2]
+        values = values[:-2]
+
+    insert(tablename, [listing_id] + values, commit=False)
+
+    if len(amenities) > 0:
+        for a in amenities:
+            insert("airbnb.propertyprovidedamenities", [a, listing_id], commit=False)
+
+    if len(inclusions) > 0:
+        for i in inclusions:
+            insert("airbnb.experienceinclusions", [i, listing_id], commit=False)
+
+    if len(languages) > 0:
+        for l in languages:
+            insert("airbnb.experiencelanguages", [l, listing_id], commit=False)
+    conn.commit()
 
 
 def host_select_listings(listing_type, host_id):
@@ -198,4 +224,19 @@ def get_experience_languages(experience_id):
             experience_id
         )
     )
+    return cur.fetchall()
+
+
+def get_amenities():
+    cur.execute("SELECT * from airbnb.amenity")
+    return cur.fetchall()
+
+
+def get_inclusions():
+    cur.execute("SELECT * from airbnb.inclusion")
+    return cur.fetchall()
+
+
+def get_languages():
+    cur.execute("SELECT * from airbnb.language")
     return cur.fetchall()

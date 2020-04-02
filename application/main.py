@@ -3,6 +3,18 @@ from enums import *
 from prettytable import PrettyTable
 from datetime import datetime, timedelta
 
+
+def setup_index_types():
+    amenities = backend.get_amenities()
+    inclusions = backend.get_inclusions()
+    languages = backend.get_languages()
+    create_list = lambda x: [t[0] for t in x]
+
+    index_types["Amenities"] = create_list(amenities)
+    index_types["Inclusions"] = create_list(inclusions)
+    index_types["Languages"] = create_list(languages)
+
+
 branch_names = backend.get_branches()
 
 integer_types = set(
@@ -23,6 +35,10 @@ integer_types = set(
         "day",
         "month",
         "year",
+        "amenity",
+        "inclusion",
+        "language",
+        "value",
     ]
 )
 float_types = set(["price", "Price"])
@@ -30,6 +46,9 @@ time_types = set(["duration", "Duration", "time"])
 time_unit_types = set(["hours", "minutes", "seconds"])
 datetime_types = set(["startdate", "enddate"])
 const_types = {"Branch Name": branch_names, "Payment Type": ["cash", "credit", "debit"]}
+index_types = {"Amenities": [], "Inclusions": [], "Languages": []}
+
+setup_index_types()
 
 property_attributes = [
     "Branch Name",
@@ -40,6 +59,7 @@ property_attributes = [
     "Number of Beds",
     "Number of Baths",
     "Price",
+    "Amenities",
 ]
 
 experience_attributes = [
@@ -49,6 +69,8 @@ experience_attributes = [
     "Duration",
     "Group Size",
     "Price",
+    "Inclusions",
+    "Languages",
 ]
 
 valid_attributes = {
@@ -201,13 +223,12 @@ def create_listing(host_id, listing_type):
     if listing_type == ListingType.Property:
         for attrib in property_attributes:
             inputs.append(input_attribute(attrib))
-        inputs = [host_id] + inputs
-        backend.insert_listing(listing_type, inputs)
     else:
         for attrib in experience_attributes:
             inputs.append(input_attribute(attrib))
-        inputs = [host_id] + inputs
-        backend.insert_listing(listing_type, inputs)
+
+    inputs = [host_id] + inputs
+    backend.insert_listing(listing_type, inputs)
 
 
 def delete_listing(listing, listing_type):
@@ -368,6 +389,29 @@ def input_attribute(attribute_name):
             if value not in valid_values:
                 print("Error: invalid value")
                 continue
+        elif attribute_name in index_types:
+            options = index_types[attribute_name]
+            valid_nums = list(range(0, len(options)))
+            print("----")
+            for i in range(len(options)):
+                print("{0}: {1}".format(i + 1, options[i]))
+            print("----")
+            print(
+                "Enter the numbers for the types of {0} you want (enter 0 to stop)".format(
+                    attribute_name
+                )
+            )
+            chosen_values = []
+            while True:
+                value = input_attribute("value")
+                if value == 0:
+                    break
+                elif value >= len(options):
+                    print("Error: chosen option is out of bounds")
+                    continue
+                chosen_values.append(options[value - 1])
+                print("You selected {0}".format(chosen_values[-1]))
+            return chosen_values
         elif attribute_name in datetime_types:
             print("Enter {0} (all integers): ".format(attribute_name))
             day = input_attribute("day")
