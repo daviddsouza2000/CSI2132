@@ -19,6 +19,8 @@ branch_names = backend.get_branches()
 
 integer_types = set(
     [
+        "Employee Id",
+        "id",
         "groupsize",
         "numguests",
         "numbedrooms",
@@ -39,8 +41,10 @@ integer_types = set(
         "inclusion",
         "language",
         "value",
+        "House Number",
     ]
 )
+
 float_types = set(["price", "Price"])
 time_types = set(["duration", "Duration", "time"])
 time_unit_types = set(["hours", "minutes", "seconds"])
@@ -90,21 +94,43 @@ valid_attributes = {
 
 
 def create_user():
+    valid_provinces = set(
+        ["NL", "PE", "NS", "NB", "QC", "ON", "MB", "SK", "AB", "BC", "YT", "NT", "NU",]
+    )
     firstname = input("Enter first name: ")
     lastname = input("Enter last name: ")
-    housenumber = int(input("Enter house number: "))
+    housenumber = input_attribute("House Number")
     street = input("Enter street: ")
     city = input("Enter city: ")
-    province = input("Enter province: ")
+    province = input("Enter province ({0}): ".format(",".join(valid_provinces)))
+    while province not in valid_provinces:
+        province = input("Enter province({0}): ".format(",".join(valid_provinces)))
     return backend.create_user(firstname, lastname, housenumber, street, city, province)
 
 
+def get_int_input(message, max_val, includes_zero=False):
+    while True:
+        try:
+            inp = int(input(message))
+            if inp <= max_val and (inp > 0 or (inp == 0 and includes_zero)):
+                return inp
+            else:
+                print("Error: did not select a valid choice")
+        except:
+            print("Error: must be an integer")
+
+
 def get_user_id():
-    existing_user = int(input("(1) Login, (2) Register: "))
+    existing_user = get_int_input("(1) Login, (2) Register: ", 2)
     user_id = -1
 
     if existing_user == 1:
-        user_id = int(input("Enter your id: "))
+        while True:
+            user_id = input_attribute("id")
+            if backend.is_valid_user_id(user_id):
+                return user_id
+            else:
+                print("Error: Entered Id does not exist")
     else:
         user_id = create_user()
         print(
@@ -116,24 +142,42 @@ def get_user_id():
 
 
 def get_employee_id():
-    emp_id = int(input("Enter your employee id: "))
-    return emp_id
+    while True:
+        emp_id = input_attribute("Employee Id")
+        if backend.is_valid_employee_id(emp_id):
+            return emp_id
+        else:
+            print("Error: Entered Id does not exist")
+
+
+def get_listing_type_input():
+    val = get_int_input("(1) Property or (2) Experience: ", 2)
+    return ListingType(val)
+
+
+def yes_or_no_input(message):
+    while True:
+        inp = input(message)
+        if inp.lower() not in ["y", "n"]:
+            print("Error: must enter 'y' or 'n')")
+        else:
+            return inp.lower() == "y"
 
 
 def handle_employee():
     emp_id = get_employee_id()
     while True:
-        choice = int(
-            input(
-                "(1) View all listings | (2) View listing given branch | (3) View all users | (4) View all hosts | (5) View all superhosts: "
-            )
+        choice = get_int_input(
+            "(1) View all listings | (2) View listing given branch | (3) View all users | (4) View all hosts | (5) View all superhosts: ",
+            5,
         )
+
         if choice == 1:
-            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listing_type = get_listing_type_input()
             listings = display_employee_listings(listing_type, None)
         elif choice == 2:
             branch = input_attribute("Branch Name")
-            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listing_type = get_listing_type_input()
             listings = display_employee_listings(listing_type, branch)
         elif choice == 3:
             display_users()
@@ -146,21 +190,23 @@ def handle_employee():
 def handle_host():
     user_id = get_user_id()
     while True:
-        choice = int(input("(1) View listings, (2) Add listing: "))
+        choice = get_int_input("(1) View listings | (2) Add listing: ", 2)
         if choice == 1:
-            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listing_type = get_listing_type_input()
             listings = display_listings(listing_type, user_id)
-            view_listing = (
-                input("Would you like to view a specific listing? (y/n) ") == "y"
+            view_listing = yes_or_no_input(
+                "Would you like to view a specific listing? (y/n) "
             )
             if view_listing:
-                index = int(input("Enter the index of the listing you wish to view: "))
+                index = get_int_input(
+                    "Enter the index of the listing you wish to view: ", len(listings)
+                )
                 listing = listings[index - 1]
                 display_listing(listing, listing_type)
-                action = int(
-                    input(
-                        "Actions: (0) Go back | (1) Edit attribute | (2) Delete listing | (3) View bookings: "
-                    )
+                action = get_int_input(
+                    "Actions: (0) Go back | (1) Edit attribute | (2) Delete listing | (3) View bookings: ",
+                    3,
+                    includes_zero=True,
                 )
                 if action == 1:
                     edit_listing_attribute(listing, listing_type)
@@ -169,25 +215,29 @@ def handle_host():
                 elif action == 3:
                     display_listing_bookings(listing_type, listing)
         else:
-            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listing_type = get_listing_type_input()
             create_listing(user_id, listing_type)
 
 
 def handle_guest():
     user_id = get_user_id()
     while True:
-        choice = int(input("(1) View listings |  (2) View your bookings: "))
+        choice = get_int_input("(1) View listings | (2) View your bookings: ", 2)
         if choice == 1:
-            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listing_type = get_listing_type_input()
             listings = display_listings(listing_type, None)
-            view_listing = (
-                input("Would you like to view a specific listing? (y/n) ") == "y"
+            view_listing = yes_or_no_input(
+                "Would you like to view a specific listing? (y/n) "
             )
             if view_listing:
-                index = int(input("Enter the index of the listing you wish to view: "))
+                index = get_int_input(
+                    "Enter the index of the listing you wish to view: ", len(listings)
+                )
                 listing = listings[index - 1]
                 display_listing(listing, listing_type)
-                action = int(input("Actions: (0) Go back | (1) Create Booking: "))
+                action = get_int_input(
+                    "Actions: (0) Go back | (1) Create Booking: ", 1, includes_zero=True
+                )
                 if action == 1:
                     if listing_type == ListingType.Property:
                         booking_id = create_property_booking(listing, user_id)
@@ -196,18 +246,21 @@ def handle_guest():
                     make_payment(booking_id, listing[0], listing_type)
 
         else:
-            listing_type = ListingType(int(input("(1) Property or (2) Experience: ")))
+            listing_type = get_listing_type_input()
             bookings = display_user_bookings(listing_type, user_id)
-            interact_booking = (
-                input("Would you like to interact with a specific booking? (y/n) ")
-                == "y"
+            interact_booking = yes_or_no_input(
+                "Would you like to interact with a specific booking? (y/n) "
             )
+
             if interact_booking:
-                index = int(
-                    input("Enter the index of the booking you wish to interact with: ")
+                index = get_int_input(
+                    "Enter the index of the booking you wish to interact with: ",
+                    len(bookings),
                 )
                 booking = bookings[index - 1]
-                action = int(input("Actions: (0) Go back | (1) Delete Booking: "))
+                action = get_int_input(
+                    "Actions: (0) Go back | (1) Delete Booking: ", 1, includes_zero=True
+                )
                 if action == 1:
                     delete_booking(booking, listing_type)
 
@@ -711,9 +764,13 @@ def display_listing(listing, listing_type):
 
 
 while True:
-    user_type = input(
-        "Welcome to the Airbnb application, are you a (G)uest, (H)ost, or (E)mployee? "
-    )
+    print("Welcome to the Airbnb application")
+    while True:
+        user_type = input("Are you a (G)uest, (H)ost, or (E)mployee? ")
+        if user_type not in ["G", "H", "E"]:
+            print("Error: must enter one of 'G', 'H', 'E'")
+        else:
+            break
 
     if user_type == "E":
         handle_employee()

@@ -18,6 +18,16 @@ max_id = 999999
 branch_map = {}
 
 
+def is_valid_user_id(user_id):
+    cur.execute("SELECT * FROM airbnb.user WHERE userid = {0}".format(user_id))
+    return len(cur.fetchall()) != 0
+
+
+def is_valid_employee_id(emp_id):
+    cur.execute("SELECT * FROM airbnb.employee WHERE employeeid = {0}".format(emp_id))
+    return len(cur.fetchall()) != 0
+
+
 def create_user(
     firstname, lastname, housenumber, street, city, province, is_super_host=False
 ):
