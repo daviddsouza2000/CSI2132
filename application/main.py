@@ -1,7 +1,10 @@
-import backend
+from backend import Backend
 from enums import *
 from prettytable import PrettyTable
 from datetime import datetime, timedelta
+import sys
+
+backend = Backend()
 
 
 def setup_index_types():
@@ -111,11 +114,18 @@ def create_user():
 def get_int_input(message, max_val, includes_zero=False):
     while True:
         try:
-            inp = int(input(message))
+            inp = input(message)
+            # if user inputs exit at any point we exit
+            if inp == "exit":
+                sys.exit()
+
+            inp = int(inp)
             if inp <= max_val and (inp > 0 or (inp == 0 and includes_zero)):
                 return inp
             else:
                 print("Error: did not select a valid choice")
+        except SystemExit:
+            raise SystemExit
         except:
             print("Error: must be an integer")
 
@@ -168,8 +178,8 @@ def handle_employee():
     emp_id = get_employee_id()
     while True:
         choice = get_int_input(
-            "(1) View all listings | (2) View listing given branch | (3) View all users | (4) View all hosts | (5) View all superhosts: ",
-            5,
+            "(1) View all listings | (2) View listing given branch | (3) View all listings booked in the next week | (4) View all users | (5) View all hosts | (6) View all superhosts: ",
+            6,
         )
 
         if choice == 1:
@@ -180,10 +190,13 @@ def handle_employee():
             listing_type = get_listing_type_input()
             listings = display_employee_listings(listing_type, branch)
         elif choice == 3:
-            display_users()
+            listing_type = get_listing_type_input()
+            display_week_listings(listing_type)
         elif choice == 4:
-            display_hosts(False)
+            display_users()
         elif choice == 5:
+            display_hosts(False)
+        elif choice == 6:
             display_hosts(True)
 
 
@@ -263,6 +276,49 @@ def handle_guest():
                 )
                 if action == 1:
                     delete_booking(booking, listing_type)
+
+
+def display_week_listings(listing_type):
+    headers = []
+    if listing_type == ListingType.Property:
+        headers = [
+            "PropertyId",
+            "HostId",
+            "BranchId",
+            "Title",
+            "Description",
+            "NumGuests",
+            "NumBedrooms",
+            "NumBeds",
+            "NumBaths",
+            "Price",
+        ]
+    else:
+        headers = [
+            "ExperienceId",
+            "HostId",
+            "BranchId",
+            "Title",
+            "Description",
+            "Duration",
+            "GroupSize",
+            "Price",
+        ]
+
+    t = PrettyTable(headers)
+    rows = (
+        backend.get_week_property_listings()
+        if listing_type == ListingType.Property
+        else backend.get_week_experience_listings()
+    )
+
+    for row in rows:
+        row = list(row)
+        # This is to truncate the description, otherwise the table looks gross
+        if len(row[4]) > 50:
+            row[4] = row[4][:50] + "..."
+        t.add_row(row)
+    print(t)
 
 
 def display_users():
@@ -763,18 +819,20 @@ def display_listing(listing, listing_type):
         print("Languages: " + languages_str)
 
 
+print("Welcome to the Airbnb application")
 while True:
-    print("Welcome to the Airbnb application")
-    while True:
-        user_type = input("Are you a (G)uest, (H)ost, or (E)mployee? ")
-        if user_type not in ["G", "H", "E"]:
-            print("Error: must enter one of 'G', 'H', 'E'")
-        else:
-            break
+    user_type = input("Are you a (G)uest, (H)ost, or (E)mployee? ")
+    if user_type not in ["G", "H", "E"]:
+        print("Error: must enter one of 'G', 'H', 'E'")
+    else:
+        break
 
+try:
     if user_type == "E":
         handle_employee()
     elif user_type == "H":
         handle_host()
     else:
         handle_guest()
+except SystemExit:
+    print("Exiting")
