@@ -18,7 +18,7 @@ from property join v on property.propertyid = v.propertyid
 select firstnamefirst(w.firstname, w.lastname) as guest_name, price as rental_price,
 datebooked as signing_date,name as branch_name, type as payment_type, status as payment_status
 from branch natural join w
-order by type, datebooked desc; 
+order by type, datebooked desc;
 
 /* 2
 Comments: users (guests) are not connected to any branch
@@ -32,7 +32,7 @@ order by userid;
 select bookingid, propertyid,userid,numguests,datebooked,startdatetime,enddatetime,price from
 propertybooking natural join propertypayments, payment
 where propertypayments.paymentid = payment.paymentid and payment.status = 'completed'
-order by propertybooking,price
+order by price
 limit 1;
 
 /* 4 */
