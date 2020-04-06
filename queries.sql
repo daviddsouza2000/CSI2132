@@ -2,6 +2,7 @@
 /* 1
 Comments: property has no "rental type"
 */
+with w as(
 with v as(
 with t as(
 with s as (
@@ -11,12 +12,13 @@ select * from payment natural join s
 )
 select * from airbnb.user natural join t
 )
-select * from property join v on property.propertyid = v.propertyid
+select firstname,lastname,property.propertyid, hostid, branchid, title,description, v.numguests, datebooked, type, status, v.price
+from property join v on property.propertyid = v.propertyid
 )
-select firstnamefirst(firstname,lastname) as guest_name, price as rental_price,
+select firstnamefirst(w.firstname, w.lastname) as guest_name, price as rental_price,
 datebooked as signing_date,name as branch_name, type as payment_type, status as payment_status
 from branch natural join w
-order by type, datebooked desc;
+order by type, datebooked desc; 
 
 /* 2
 Comments: users (guests) are not connected to any branch

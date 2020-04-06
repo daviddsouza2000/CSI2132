@@ -3,8 +3,8 @@ import random as rand
 from enums import *
 
 conn = psy.connect(
-    dbname="apoch012",
-    user="apoch012",
+    dbname="ddsou046",
+    user="ddsou046",
     password="",
     port="15432",
     host="web0.eecs.uottawa.ca",
